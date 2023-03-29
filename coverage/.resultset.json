@@ -181,8 +181,29 @@
         "lines": [
           1,
           1,
-          4,
-          4,
+          1,
+          1,
+          null,
+          null
+        ]
+      },
+      "/Users/isaacalter/Desktop/turing_work/3mod/solo_project1/rails-engine/spec/factories/items.rb": {
+        "lines": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          null,
+          null
+        ]
+      },
+      "/Users/isaacalter/Desktop/turing_work/3mod/solo_project1/rails-engine/spec/factories/merchants.rb": {
+        "lines": [
+          1,
+          1,
+          5,
           null,
           null
         ]
@@ -193,12 +214,14 @@
           1,
           1,
           1,
+          1,
+          1,
           null,
           null,
           null
         ]
       },
-      "/Users/isaacalter/Desktop/turing_work/3mod/solo_project1/rails-engine/app/models/customer.rb": {
+      "/Users/isaacalter/Desktop/turing_work/3mod/solo_project1/rails-engine/app/models/merchant.rb": {
         "lines": [
           1,
           null
@@ -211,27 +234,23 @@
           null
         ]
       },
-      "/Users/isaacalter/Desktop/turing_work/3mod/solo_project1/rails-engine/spec/requests/api/v1/customers_request_spec.rb": {
+      "/Users/isaacalter/Desktop/turing_work/3mod/solo_project1/rails-engine/app/controllers/api/v1/merchants_controller.rb": {
         "lines": [
           1,
-          null,
-          1,
-          1,
           1,
           null,
           1,
           1,
-          null,
-          0,
-          null,
-          0,
-          null,
-          null
-        ]
-      },
-      "/Users/isaacalter/Desktop/turing_work/3mod/solo_project1/rails-engine/app/controllers/api/v1/customers_controller.rb": {
-        "lines": [
           1,
+          null,
+          null,
+          1,
+          2,
+          1,
+          null,
+          null,
+          1,
+          null,
           1,
           1,
           null,
@@ -241,10 +260,48 @@
       "/Users/isaacalter/Desktop/turing_work/3mod/solo_project1/rails-engine/app/controllers/application_controller.rb": {
         "lines": [
           1,
+          1,
+          null,
+          1,
+          null,
+          1,
+          0,
+          null,
+          null
+        ]
+      },
+      "/Users/isaacalter/Desktop/turing_work/3mod/solo_project1/rails-engine/app/serializers/merchant_serializer.rb": {
+        "lines": [
+          1,
+          1,
+          null,
+          1,
+          null,
+          3,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          1,
+          null,
+          1,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
           null
         ]
       }
     },
-    "timestamp": 1680024717
+    "timestamp": 1680108814
   }
 }
