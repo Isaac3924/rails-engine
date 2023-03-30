@@ -14,18 +14,24 @@ describe "Items API" do
 
     items = JSON.parse(response.body, symbolize_names: true)
 
-    expect(items.count).to eq(3)
+    expect(items[:data].count).to eq(3)
 
-    items.each do |item|
+    items[:data].each do |item|
       expect(item).to have_key(:id)
-      expect(item[:id]).to be_an(Integer)
+      expect(item[:id]).to be_a(String)
 
-      expect(item).to have_key(:name)
-      expect(item[:name]).to be_a(String)
+      expect(item[:attributes]).to have_key(:name)
+      expect(item[:attributes][:name]).to be_a(String)
+      expect(item[:attributes]).to have_key(:description)
+      expect(item[:attributes][:description]).to be_a(String)
+      expect(item[:attributes]).to have_key(:unit_price)
+      expect(item[:attributes][:unit_price]).to be_a(Float)
+      expect(item[:attributes]).to have_key(:merchant_id)
+      expect(item[:attributes][:merchant_id]).to be_an(Integer)
     end
   end
 
-  it "can get on item by its id" do
+  it "can get an item by its id" do
     id = create(:item, merchant_id: @m_id).id
 
     get "/api/v1/items/#{id}"
@@ -34,11 +40,17 @@ describe "Items API" do
 
     expect(response).to be_successful
 
-    expect(item).to have_key(:id)
-    expect(item[:id]).to be_an(Integer)
+    expect(item[:data]).to have_key(:id)
+    expect(item[:data][:id]).to be_a(String)
 
-    expect(item).to have_key(:name)
-    expect(item[:name]).to be_a(String)
+    expect(item[:data][:attributes]).to have_key(:name)
+    expect(item[:data][:attributes][:name]).to be_a(String)
+    expect(item[:data][:attributes]).to have_key(:description)
+    expect(item[:data][:attributes][:description]).to be_a(String)
+    expect(item[:data][:attributes]).to have_key(:unit_price)
+    expect(item[:data][:attributes][:unit_price]).to be_a(Float)
+    expect(item[:data][:attributes]).to have_key(:merchant_id)
+    expect(item[:data][:attributes][:merchant_id]).to be_an(Integer)
   end
 
   it "raises an error when it cannot find a item by id" do
@@ -70,12 +82,68 @@ describe "Items API" do
     created_item = Item.last
 
     expect(response).to be_successful
-    expect(response).to be_successful
+    expect(response).to have_http_status(201)
     expect(created_item.name).to eq(item_params[:name])
-    expect(created_item.name).to eq(item[:name])
+    expect(created_item.name).to eq(item[:data][:attributes][:name])
     expect(created_item.description).to eq(item_params[:description])
-    expect(created_item.description).to eq(item[:description])
+    expect(created_item.description).to eq(item[:data][:attributes][:description])
     expect(created_item.unit_price).to eq(item_params[:unit_price])
-    expect(created_item.unit_price).to eq(item[:unit_price])
+    expect(created_item.unit_price).to eq(item[:data][:attributes][:unit_price])
+  end
+
+  it "returns an error when any of the attributes are missing in create" do
+    item_params = ({
+      description: 'It sure does do a thing',
+      unit_price: 2.5,
+      merchant_id: @m_id
+    })
+    headers = {"CONTENT_TYPE" => "application/json"}
+
+    post "/api/v1/items", headers: headers, params: JSON.generate(item: item_params)
+    item = JSON.parse(response.body, symbolize_names: true)
+    created_item = Item.last
+    
+    expect(response).to_not be_successful
+    expect(response).to have_http_status(400)
+  end
+
+  it "can destroy an item" do
+    item = create(:item, merchant_id: @m_id)
+
+    expect(Item.count).to eq(1)
+
+    delete "/api/v1/items/#{item.id}"
+
+    expect(response).to be_successful
+    expect(response).to have_http_status(204)
+    expect(Item.count).to eq(0)
+    expect{Item.find(item.id)}.to raise_error(ActiveRecord::RecordNotFound)
+  end
+
+  it "can update an existing item" do
+    item = create(:item, merchant_id: @m_id)
+    previous_name = Item.last.name
+    item_params = {name: "Burning Wheel"}
+    headers = {"CONTENT_TYPE" => "application/json"}
+    
+    patch "/api/v1/items/#{item.id}", headers: headers, params: JSON.generate({item: item_params})
+    item = Item.find_by(id: item.id)
+
+    expect(response).to be_successful
+    expect(item.name).to_not eq(previous_name)
+    expect(item.name).to eq("Burning Wheel")
+  end
+
+  it "returns error if updating the merchant id to one that doesn't exist" do
+    item = create(:item, merchant_id: @m_id)
+    previous_name = Item.last.name
+    item_params = {merchant_id: 1111111111}
+    headers = {"CONTENT_TYPE" => "application/json"}
+    
+    put "/api/v1/items/#{item.id}", headers: headers, params: JSON.generate({item: item_params})
+    item = Item.find_by(id: item.id)
+
+    expect(response).to_not be_successful
+    expect(response).to have_http_status(400)
   end
 end

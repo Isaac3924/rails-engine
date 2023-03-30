@@ -104,6 +104,8 @@ GEM
     io-console (0.6.0)
     irb (1.6.3)
       reline (>= 0.3.0)
+    jsonapi-serializer (2.2.0)
+      activesupport (>= 4.2)
     launchy (2.5.2)
       addressable (~> 2.8)
     loofah (2.19.1)
@@ -218,6 +220,7 @@ DEPENDENCIES
   debug
   factory_bot_rails
   faker
+  jsonapi-serializer
   launchy
   pg (~> 1.1)
   pry
