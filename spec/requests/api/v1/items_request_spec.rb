@@ -120,6 +120,46 @@ describe "Items API" do
     expect{Item.find(item.id)}.to raise_error(ActiveRecord::RecordNotFound)
   end
 
+  it "can destroy an invoice when it destroys an item that is the singular item on the invoice" do
+    item = create(:item, merchant_id: @m_id)
+    invoice = Invoice.create() 
+    InvoiceItem.create(invoice_id: invoice.id, item_id: item.id)
+
+    expect(Item.count).to eq(1)
+    expect(Invoice.count).to eq(1)
+    expect(InvoiceItem.count).to eq(1)
+    
+    delete "/api/v1/items/#{item.id}"
+
+    expect(response).to be_successful
+    expect(response).to have_http_status(204)
+    expect(Item.count).to eq(0)
+    expect(InvoiceItem.count).to eq(0)
+    expect(Invoice.count).to eq(0)
+    expect{Item.find(item.id)}.to raise_error(ActiveRecord::RecordNotFound)
+  end
+
+  it "will not destroy an invoice when it destroys an item that is not the singular item on the invoice" do
+    item1 = create(:item, merchant_id: @m_id)
+    item2 = create(:item, merchant_id: @m_id)
+    invoice = Invoice.create() 
+    InvoiceItem.create(invoice_id: invoice.id, item_id: item1.id)
+    InvoiceItem.create(invoice_id: invoice.id, item_id: item2.id)
+
+    expect(Item.count).to eq(2)
+    expect(Invoice.count).to eq(1)
+    expect(InvoiceItem.count).to eq(2)
+    
+    delete "/api/v1/items/#{item1.id}"
+
+    expect(response).to be_successful
+    expect(response).to have_http_status(204)
+    expect(Item.count).to eq(1)
+    expect(InvoiceItem.count).to eq(1)
+    expect(Invoice.count).to eq(1)
+    expect{Item.find(item1.id)}.to raise_error(ActiveRecord::RecordNotFound)
+  end
+
   it "can update an existing item" do
     item = create(:item, merchant_id: @m_id)
     previous_name = Item.last.name
@@ -138,6 +178,19 @@ describe "Items API" do
     item = create(:item, merchant_id: @m_id)
     previous_name = Item.last.name
     item_params = {merchant_id: 1111111111}
+    headers = {"CONTENT_TYPE" => "application/json"}
+    
+    put "/api/v1/items/#{item.id}", headers: headers, params: JSON.generate({item: item_params})
+    item = Item.find_by(id: item.id)
+
+    expect(response).to_not be_successful
+    expect(response).to have_http_status(400)
+  end
+
+  it "returns error if updating an item attribute to an unsupported data type" do
+    item = create(:item, merchant_id: @m_id)
+    previous_name = Item.last.name
+    item_params = {description: 13}
     headers = {"CONTENT_TYPE" => "application/json"}
     
     put "/api/v1/items/#{item.id}", headers: headers, params: JSON.generate({item: item_params})

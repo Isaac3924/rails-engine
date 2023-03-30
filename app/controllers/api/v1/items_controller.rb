@@ -24,12 +24,30 @@ class Api::V1::ItemsController < ApplicationController
 
   def update
     item = Item.find(params[:id])
-    item.update(item_params)
-    render json: ItemSerializer.format_item(item)
+    merchant_ids = Merchant.all.map do |merchant|
+      merchant.id
+    end
+
+    if item_params[:merchant_id] && merchant_ids.exclude?(item_params[:merchant_id])
+      render json: { error: "Item updating with invalid merchant id: #{item_params[:merchant_id]}" }, status: :bad_request
+    elsif item_params[:name] && item_params[:name].class != String
+      render json: { error: "Item updating with incorrect data type for name: #{item_params[:name].class}" }, status: :bad_request
+    elsif item_params[:description] && item_params[:description].class != String
+      render json: { error: "Item updating with incorrect data type for description: #{item_params[:description].class}" }, status: :bad_request
+    elsif item_params[:unit_price] && item_params[:unit_price].class != Float
+      render json: { error: "Item updating with incorrct data type for unit price: #{item_params[:unit_price].class}" }, status: :bad_request
+    elsif item_params[:merchant_id] && item_params[:merchant_id].class != Integer
+      render json: { error: "Item updating with incorrct data type for merchant id: #{item_params[:merchant_id].class}" }, status: :bad_request
+    else
+      item.update(item_params)
+      render json: ItemSerializer.format_item(item)
+    end
   end
 
   def destroy
-    Item.find(params[:id]).destroy
+    item = Item.find(params[:id])
+    item.check_invoices
+    item.destroy
   end
 
   private
