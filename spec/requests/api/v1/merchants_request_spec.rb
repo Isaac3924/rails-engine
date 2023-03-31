@@ -86,6 +86,6 @@ describe "Merchants API" do
 
     expect(response).to_not be_successful
     expect(response).to have_http_status(404)
-    expect(merchant_items).to eq({:error=>"Merchant not found with provided ID."})
+    expect(merchant_items).to eq({:errors=>"Merchant not found with provided ID."})
   end
 end

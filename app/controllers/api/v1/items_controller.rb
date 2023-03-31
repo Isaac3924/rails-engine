@@ -3,7 +3,6 @@ class Api::V1::ItemsController < ApplicationController
   rescue_from ActiveRecord::InvalidForeignKey, with: :item_invalid_merchant
 
   def index
-    require 'pry'; binding.pry
     items = Item.all
     render json: ItemSerializer.format_items(items)
   end
@@ -62,6 +61,6 @@ class Api::V1::ItemsController < ApplicationController
   end
 
   def item_params
-    params.require(:item).permit(:name, :description, :unit_price, :merchant_id)
+    params.require(:item).permit(:name, :description, :unit_price, :merchant_id).reject { |k, v| v.blank? }
   end
 end

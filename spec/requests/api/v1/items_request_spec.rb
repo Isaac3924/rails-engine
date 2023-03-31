@@ -107,6 +107,31 @@ describe "Items API" do
     expect(response).to have_http_status(400)
   end
 
+  it "returns the new item, but ignores the last false attribute" do
+    item_params = ({
+      name: 'The Thing',
+      description: 'It sure does do a thing',
+      unit_price: 2.5,
+      merchant_id: @m_id,
+      missingno: "missingno"
+    })
+    headers = {"CONTENT_TYPE" => "application/json"}
+
+    post "/api/v1/items", headers: headers, params: JSON.generate(item: item_params)
+    item = JSON.parse(response.body, symbolize_names: true)
+    created_item = Item.last
+
+    expect(response).to be_successful
+    expect(response).to have_http_status(201)
+    expect(created_item.name).to eq(item_params[:name])
+    expect(created_item.name).to eq(item[:data][:attributes][:name])
+    expect(created_item.description).to eq(item_params[:description])
+    expect(created_item.description).to eq(item[:data][:attributes][:description])
+    expect(created_item.unit_price).to eq(item_params[:unit_price])
+    expect(created_item.unit_price).to eq(item[:data][:attributes][:unit_price])
+    expect(item[:data][:attributes]).to_not include([:missingno])
+  end
+
   it "can destroy an item" do
     item = create(:item, merchant_id: @m_id)
 
@@ -198,5 +223,42 @@ describe "Items API" do
 
     expect(response).to_not be_successful
     expect(response).to have_http_status(400)
+  end
+
+  it "can return the merchant associated with an item" do
+    merch1 = create(:merchant)
+    merch2 = create(:merchant)
+    item1 = create(:item, merchant_id: merch1.id)
+    item2 = create(:item, merchant_id: merch1.id)
+    item3 = create(:item, merchant_id: merch1.id)
+    item4 = create(:item, merchant_id: merch2.id)
+
+    get "/api/v1/items/#{item4.id}/merchant"
+
+    item_merchant = JSON.parse(response.body, symbolize_names: true)
+
+    expect(response).to be_successful
+    expect(Merchant.all.count).to eq(3)
+    expect(item_merchant[:data]).to be_a(Hash)
+    expect(item_merchant[:data][:attributes]).to have_key(:name)
+    expect(item_merchant[:data][:attributes][:name]).to be_a(String)
+    expect(item_merchant[:data][:attributes][:name]).to eq(merch2.name)
+  end
+
+  it "can return an error if there is no merchant id that exists" do
+    merch1 = create(:merchant)
+    merch2 = create(:merchant)
+    item1 = create(:item, merchant_id: merch1.id)
+    item2 = create(:item, merchant_id: merch1.id)
+    item3 = create(:item, merchant_id: merch1.id)
+    item4 = create(:item, merchant_id: merch2.id)
+
+    get "/api/v1/merchants/12345/items"
+
+    merchant_items = JSON.parse(response.body, symbolize_names: true)
+
+    expect(response).to_not be_successful
+    expect(response).to have_http_status(404)
+    expect(merchant_items).to eq({:errors=>"Merchant not found with provided ID."})
   end
 end
