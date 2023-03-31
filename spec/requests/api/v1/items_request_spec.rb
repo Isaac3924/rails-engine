@@ -212,10 +212,36 @@ describe "Items API" do
     expect(response).to have_http_status(400)
   end
 
-  it "returns error if updating an item attribute to an unsupported data type" do
+  it "returns error if updating an item attribute description to an unsupported data type" do
     item = create(:item, merchant_id: @m_id)
     previous_name = Item.last.name
     item_params = {description: 13}
+    headers = {"CONTENT_TYPE" => "application/json"}
+    
+    put "/api/v1/items/#{item.id}", headers: headers, params: JSON.generate({item: item_params})
+    item = Item.find_by(id: item.id)
+
+    expect(response).to_not be_successful
+    expect(response).to have_http_status(400)
+  end
+
+  it "returns error if updating an item attribute name to an unsupported data type" do
+    item = create(:item, merchant_id: @m_id)
+    previous_name = Item.last.name
+    item_params = {name: 1.3}
+    headers = {"CONTENT_TYPE" => "application/json"}
+    
+    put "/api/v1/items/#{item.id}", headers: headers, params: JSON.generate({item: item_params})
+    item = Item.find_by(id: item.id)
+
+    expect(response).to_not be_successful
+    expect(response).to have_http_status(400)
+  end
+
+  it "returns error if updating an item attribute unit_price to an unsupported data type" do
+    item = create(:item, merchant_id: @m_id)
+    previous_name = Item.last.name
+    item_params = {unit_price: "WROOOONG"}
     headers = {"CONTENT_TYPE" => "application/json"}
     
     put "/api/v1/items/#{item.id}", headers: headers, params: JSON.generate({item: item_params})
@@ -463,5 +489,89 @@ describe "Items API" do
     expect(item[:data][:attributes][:unit_price]).to eq(4.53)
     expect(item[:data][:attributes]).to have_key(:merchant_id)
     expect(item[:data][:attributes][:merchant_id]).to be_an(Integer)
+  end
+
+  it "returns error if searching with name and price" do
+    item1 = Item.create(name: "thing", description: "This item 1", unit_price: 3.45, merchant_id: @m_id)
+    item2 = Item.create(name: "blah", description: "This item 2", unit_price: 5.34, merchant_id: @m_id)
+    item3 = Item.create(name: "ugh", description: "This item 3", unit_price: 4.53, merchant_id: @m_id)
+
+    get "/api/v1/items/find?name=thi&max_price=5"
+
+    item = JSON.parse(response.body, symbolize_names: true)
+
+    expect(response).to_not be_successful
+    expect(response).to have_http_status(400)
+    expect(item[:errors]).to eq("Your search included both a name and price parameter." )
+  end
+
+  it "returns error if searching with a minimum price less than 0" do
+    item1 = Item.create(name: "thing", description: "This item 1", unit_price: 3.45, merchant_id: @m_id)
+    item2 = Item.create(name: "blah", description: "This item 2", unit_price: 5.34, merchant_id: @m_id)
+    item3 = Item.create(name: "ugh", description: "This item 3", unit_price: 4.53, merchant_id: @m_id)
+
+    get "/api/v1/items/find?min_price=-5"
+
+    item = JSON.parse(response.body, symbolize_names: true)
+
+    expect(response).to_not be_successful
+    expect(response).to have_http_status(400)
+    expect(item[:errors]).to eq("min_price must be greater than or equal to 0" )
+  end
+
+  it "returns error if searching with a maximum price less than 0" do
+    item1 = Item.create(name: "thing", description: "This item 1", unit_price: 3.45, merchant_id: @m_id)
+    item2 = Item.create(name: "blah", description: "This item 2", unit_price: 5.34, merchant_id: @m_id)
+    item3 = Item.create(name: "ugh", description: "This item 3", unit_price: 4.53, merchant_id: @m_id)
+
+    get "/api/v1/items/find?max_price=-5"
+
+    item = JSON.parse(response.body, symbolize_names: true)
+
+    expect(response).to_not be_successful
+    expect(response).to have_http_status(400)
+    expect(item[:errors]).to eq("max_price must be greater than or equal to 0" )
+  end
+
+  it "returns error if searching with a minimum price greater than maximum price" do
+    item1 = Item.create(name: "thing", description: "This item 1", unit_price: 3.45, merchant_id: @m_id)
+    item2 = Item.create(name: "blah", description: "This item 2", unit_price: 5.34, merchant_id: @m_id)
+    item3 = Item.create(name: "ugh", description: "This item 3", unit_price: 4.53, merchant_id: @m_id)
+
+    get "/api/v1/items/find?max_price=5&min_price=7"
+
+    item = JSON.parse(response.body, symbolize_names: true)
+
+    expect(response).to_not be_successful
+    expect(response).to have_http_status(400)
+    expect(item[:errors]).to eq("min_price must be less than or equal to max_price" )
+  end
+
+  it "returns error if no results from search" do
+    item1 = Item.create(name: "thing", description: "This item 1", unit_price: 3.45, merchant_id: @m_id)
+    item2 = Item.create(name: "blah", description: "This item 2", unit_price: 5.34, merchant_id: @m_id)
+    item3 = Item.create(name: "ugh", description: "This item 3", unit_price: 4.53, merchant_id: @m_id)
+
+    get "/api/v1/items/find?max_price=2&min_price=1"
+
+    item = JSON.parse(response.body, symbolize_names: true)
+
+    expect(response).to_not be_successful
+    expect(response).to have_http_status(404)
+    expect(item[:errors]).to eq("No items found" )
+  end
+
+  it "returns error if searching with an incorrect input (blank)" do
+    item1 = Item.create(name: "thing", description: "This item 1", unit_price: 3.45, merchant_id: @m_id)
+    item2 = Item.create(name: "blah", description: "This item 2", unit_price: 5.34, merchant_id: @m_id)
+    item3 = Item.create(name: "ugh", description: "This item 3", unit_price: 4.53, merchant_id: @m_id)
+
+    get "/api/v1/items/find?name="
+
+    item = JSON.parse(response.body, symbolize_names: true)
+
+    expect(response).to_not be_successful
+    expect(response).to have_http_status(400)
+    expect(item[:errors]).to eq("Incorrect parameters input" )
   end
 end

@@ -1,6 +1,5 @@
 class Api::V1::ItemsController < ApplicationController
   rescue_from ActiveRecord::RecordNotFound, with: :item_record_not_found
-  rescue_from ActiveRecord::InvalidForeignKey, with: :item_invalid_merchant
 
   def index
     items = Item.all
@@ -36,8 +35,6 @@ class Api::V1::ItemsController < ApplicationController
       render json: { error: "Item updating with incorrect data type for description: #{item_params[:description].class}" }, status: :bad_request
     elsif item_params[:unit_price] && item_params[:unit_price].class != Float
       render json: { error: "Item updating with incorrct data type for unit price: #{item_params[:unit_price].class}" }, status: :bad_request
-    elsif item_params[:merchant_id] && item_params[:merchant_id].class != Integer
-      render json: { error: "Item updating with incorrct data type for merchant id: #{item_params[:merchant_id].class}" }, status: :bad_request
     else
       item.update(item_params)
       render json: ItemSerializer.format_item(item)
@@ -88,10 +85,6 @@ class Api::V1::ItemsController < ApplicationController
 
   def item_record_not_found(exception)
     render json: { error: "Item not found with ID #{params[:id]}" }, status: :not_found
-  end
-
-  def item_invalid_merchant(exception)
-    render json: { error: "Item updating with invalid merchant id: #{item_params[:merchant_id]}" }, status: :bad_request
   end
 
   def item_params
