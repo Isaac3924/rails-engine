@@ -261,4 +261,72 @@ describe "Items API" do
     expect(response).to have_http_status(404)
     expect(merchant_items).to eq({:errors=>"Merchant not found with provided ID."})
   end
+
+  it "can find an item by name" do
+    item1 = Item.create(name: "thing", description: "This item 1", unit_price: 3.45, merchant_id: @m_id)
+    item2 = Item.create(name: "blah", description: "This item 2", unit_price: 5.34, merchant_id: @m_id)
+    item3 = Item.create(name: "ugh", description: "This item 3", unit_price: 4.53, merchant_id: @m_id)
+
+    get "/api/v1/items/find?name=thing"
+
+    item = JSON.parse(response.body, symbolize_names: true)
+
+    expect(response).to be_successful
+
+    expect(item[:data]).to have_key(:id)
+    expect(item[:data][:id]).to be_a(String)
+
+    expect(item[:data][:attributes]).to have_key(:name)
+    expect(item[:data][:attributes][:name]).to be_a(String)
+    expect(item[:data][:attributes][:name]).to eq("thing")
+    expect(item[:data][:attributes]).to have_key(:description)
+    expect(item[:data][:attributes][:description]).to be_a(String)
+    expect(item[:data][:attributes][:description]).to eq("This item 1")
+    expect(item[:data][:attributes]).to have_key(:unit_price)
+    expect(item[:data][:attributes][:unit_price]).to be_a(Float)
+    expect(item[:data][:attributes][:unit_price]).to eq(3.45)
+    expect(item[:data][:attributes]).to have_key(:merchant_id)
+    expect(item[:data][:attributes][:merchant_id]).to be_an(Integer)
+  end
+
+  it "can find an item by fragment" do
+    item1 = Item.create(name: "thing", description: "This item 1", unit_price: 3.45, merchant_id: @m_id)
+    item2 = Item.create(name: "blah", description: "This item 2", unit_price: 5.34, merchant_id: @m_id)
+    item3 = Item.create(name: "ugh", description: "This item 3", unit_price: 4.53, merchant_id: @m_id)
+
+    get "/api/v1/items/find?name=thi"
+
+    item = JSON.parse(response.body, symbolize_names: true)
+
+    expect(response).to be_successful
+
+    expect(item[:data]).to have_key(:id)
+    expect(item[:data][:id]).to be_a(String)
+
+    expect(item[:data][:attributes]).to have_key(:name)
+    expect(item[:data][:attributes][:name]).to be_a(String)
+    expect(item[:data][:attributes][:name]).to eq("thing")
+    expect(item[:data][:attributes]).to have_key(:description)
+    expect(item[:data][:attributes][:description]).to be_a(String)
+    expect(item[:data][:attributes][:description]).to eq("This item 1")
+    expect(item[:data][:attributes]).to have_key(:unit_price)
+    expect(item[:data][:attributes][:unit_price]).to be_a(Float)
+    expect(item[:data][:attributes][:unit_price]).to eq(3.45)
+    expect(item[:data][:attributes]).to have_key(:merchant_id)
+    expect(item[:data][:attributes][:merchant_id]).to be_an(Integer)
+  end
+
+  it "returns error if it cannot find the one result" do
+    item1 = Item.create(name: "thing", description: "This item 1", unit_price: 3.45, merchant_id: @m_id)
+    item2 = Item.create(name: "blah", description: "This item 2", unit_price: 5.34, merchant_id: @m_id)
+    item3 = Item.create(name: "ugh", description: "This item 3", unit_price: 4.53, merchant_id: @m_id)
+
+    get "/api/v1/items/find?name=zzzzzzzzz"
+
+    item = JSON.parse(response.body, symbolize_names: true)
+
+    expect(response).to_not be_successful
+    expect(response).to have_http_status(404)
+    expect(item[:errors]).to eq("Your search 'zzzzzzzzz', contained 0 results" )
+  end
 end

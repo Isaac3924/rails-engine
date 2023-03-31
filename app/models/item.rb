@@ -19,4 +19,8 @@ class Item < ApplicationRecord
       end
     end
   end
+
+  def self.find_one_name(name)
+    self.where('LOWER(name) LIKE ?', "%#{name.downcase}%").order(:name).first
+  end
 end
