@@ -14,7 +14,7 @@ describe "Merchants API" do
 
     merchants[:data].each do |merchant|
       expect(merchant).to have_key(:id)
-      expect(merchant[:id]).to be_an(Integer)
+      expect(merchant[:id]).to be_a(String)
 
       expect(merchant[:attributes]).to have_key(:name)
       expect(merchant[:attributes][:name]).to be_a(String)
@@ -87,5 +87,44 @@ describe "Merchants API" do
     expect(response).to_not be_successful
     expect(response).to have_http_status(404)
     expect(merchant_items).to eq({:errors=>"Merchant not found with provided ID."})
+  end
+
+  it "can find a number of merchants based on a search parameter" do
+    merch1 = Merchant.create(name: "planners")
+    merch2 = Merchant.create(name: "Planes")
+    merch3 = Merchant.create(name: "arcade")
+    merch4 = Merchant.create(name: "whateva")
+
+    get "/api/v1/merchants/find_all?name=plan"
+
+    merchants = JSON.parse(response.body, symbolize_names: true)
+
+    expect(response).to be_successful
+    expect(merchants[:data].count).to eq(2)
+    expect(merchants[:data][0]).to have_key(:id)
+    expect(merchants[:data][0][:id]).to be_a(String)
+    expect(merchants[:data][1]).to have_key(:id)
+    expect(merchants[:data][1][:id]).to be_a(String)
+
+    expect(merchants[:data][0][:attributes]).to have_key(:name)
+    expect(merchants[:data][0][:attributes][:name]).to be_a(String)
+    expect(merchants[:data][0][:attributes][:name]).to eq("Planes")
+    expect(merchants[:data][1][:attributes]).to have_key(:name)
+    expect(merchants[:data][1][:attributes][:name]).to be_a(String)
+    expect(merchants[:data][1][:attributes][:name]).to eq("planners")
+  end
+
+  it "will return all merchants if there is no parameter" do
+    merch1 = Merchant.create(name: "planners")
+    merch2 = Merchant.create(name: "Planes")
+    merch3 = Merchant.create(name: "arcade")
+    merch4 = Merchant.create(name: "whateva")
+
+    get "/api/v1/merchants/find_all?name="
+    
+    merchants = JSON.parse(response.body, symbolize_names: true)
+
+    expect(response).to be_successful
+    expect(merchants[:data].count).to eq(4)
   end
 end

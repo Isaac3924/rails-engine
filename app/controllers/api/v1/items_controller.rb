@@ -69,20 +69,6 @@ class Api::V1::ItemsController < ApplicationController
     end
   end
 
-  def find_all
-     name = params[:name]
-    min_price = params[:min_price]
-    max_price = params[:max_price]
-
-    if name.present?
-
-    elsif min_price.present? || max_price.present?
-
-    else
-      render json: { errors: 'No name or price parameter detected' }, status: :unprocessable_entity
-    end
-  end
-
   private
 
   def item_record_not_found(exception)
