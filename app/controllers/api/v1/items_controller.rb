@@ -54,18 +54,33 @@ class Api::V1::ItemsController < ApplicationController
     name = params[:name]
     min_price = params[:min_price]
     max_price = params[:max_price]
-    
-    if name.present?
+
+    if name.present? && (min_price.present? || max_price.present?)
+      render json: { errors: "Your search included both a name and price parameter.", data: {} }, status: :bad_request
+    elsif name.present?
       item = Item.find_one_name(name)
       if item.present?
         render json: ItemSerializer.format_item(item)
       else
-        render json: { errors: "Your search '#{name}', contained 0 results" , data: {}}, status: :not_found
+        render json: { errors: "Your search '#{name}', contained 0 results", data: {} }, status: :not_found
       end
+    elsif min_price.present? && min_price.to_f < 0
+      render json: { errors: "min_price must be greater than or equal to 0", data: {} }, status: :bad_request
+    elsif max_price.present? && max_price.to_f < 0
+      render json: { errors: "max_price must be greater than or equal to 0", data: {} }, status: :bad_request
+    elsif min_price.present? && max_price.present? && min_price.to_f > max_price.to_f
+      render json: { errors: "min_price must be less than or equal to max_price", data: {} }, status: :bad_request
     elsif min_price.present? || max_price.present?
-
+      min_price = min_price.present? ? min_price.to_f : 0
+      max_price = max_price.present? ? max_price.to_f : Float::INFINITY
+      items = Item.find_prices(min_price, max_price)
+      if items.any?
+        render json: ItemSerializer.format_item(items.first)
+      else
+        render json: { errors: "No items found", data: {} }, status: :not_found
+      end
     else
-      render json: { errors: 'No name or price parameter detected' }, status: :unprocessable_entity
+      render json: { errors: 'Incorrect parameters input' }, status: :bad_request
     end
   end
 

@@ -124,7 +124,7 @@ describe "Merchants API" do
     
     merchants = JSON.parse(response.body, symbolize_names: true)
 
-    expect(response).to be_successful
-    expect(merchants[:data].count).to eq(4)
+    expect(response).to_not be_successful
+    expect(merchants).to eq({:errors=>"No input for name"})
   end
 end

@@ -14,13 +14,12 @@ class Api::V1::MerchantsController < ApplicationController
   def find_all
     name = params[:name]
 
-    if name
+    if name != ""
       merchants = Merchant.find_all_names(name)
+      render json: MerchantSerializer.format_merchants(merchants)
     else
-      merchants = Merchant.all
+      render json: { errors: 'No input for name' }, status: :bad_request
     end
-
-    render json: MerchantSerializer.format_merchants(merchants)
  end
 
   private
