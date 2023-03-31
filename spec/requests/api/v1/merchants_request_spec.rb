@@ -21,7 +21,7 @@ describe "Merchants API" do
     end
   end
 
-  it "can get on merchant by its id" do
+  it "can get a merchant by its id" do
     id = create(:merchant).id
 
     get "/api/v1/merchants/#{id}"
@@ -52,19 +52,40 @@ describe "Merchants API" do
     expect(merchant).to eq({:error=>"Merchant not found with ID 101"})
   end
 
-  xit "can return all items from given merchant ID" do
-    id = create(:merchant).id
+  it "can return all items from given merchant ID" do
+    merch1 = create(:merchant)
+    merch2 = create(:merchant)
+    item1 = create(:item, merchant_id: merch1.id)
+    item2 = create(:item, merchant_id: merch1.id)
+    item3 = create(:item, merchant_id: merch1.id)
+    item4 = create(:item, merchant_id: merch2.id)
 
-    get "/api/v1/merchants/#{id}/items"
+    get "/api/v1/merchants/#{merch1.id}/items"
 
-    merchant = JSON.parse(response.body, symbolize_names: true)
+    merchant_items = JSON.parse(response.body, symbolize_names: true)
 
     expect(response).to be_successful
+    expect(Item.all.count).to eq(4)
+    expect(merchant_items[:data]).to be_a(Array)
+    expect(merchant_items[:data].count).to eq(3)
+    expect(merchant_items[:data][0][:attributes]).to have_key(:name)
+    expect(merchant_items[:data][0][:attributes][:name]).to be_a(String)
+  end
 
-    expect(merchant).to have_key(:id)
-    expect(merchant[:id]).to be_an(Integer)
+  it "can return an error if there is no merchant id that exists" do
+    merch1 = create(:merchant)
+    merch2 = create(:merchant)
+    item1 = create(:item, merchant_id: merch1.id)
+    item2 = create(:item, merchant_id: merch1.id)
+    item3 = create(:item, merchant_id: merch1.id)
+    item4 = create(:item, merchant_id: merch2.id)
 
-    expect(merchant).to have_key(:name)
-    expect(merchant[:name]).to be_a(String)
+    get "/api/v1/merchants/12345/items"
+
+    merchant_items = JSON.parse(response.body, symbolize_names: true)
+
+    expect(response).to_not be_successful
+    expect(response).to have_http_status(404)
+    expect(merchant_items).to eq({:error=>"Merchant not found with provided ID."})
   end
 end
